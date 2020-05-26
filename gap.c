@@ -64,6 +64,8 @@ void free_memory(Vdata *vdata, GAPdata *gapdata);
 void read_sol(Vdata *vdata, GAPdata *gapdata);
 void recompute_cost(Vdata *vdata, GAPdata *gapdata);
 void *malloc_e(size_t size);
+int *restB(Vdata *vdata, GAPdata *gapdata);
+int isfeasible(Vdata *vdata, GAPdata *gapdata);
 
 /***** check the feasibility and recompute the cost **************************/
 /***** NEVER MODIFY THIS SUBROUTINE! *****************************************/
@@ -97,6 +99,51 @@ void recompute_cost(Vdata *vdata, GAPdata *gapdata)
   printf("time to read the instance: %7.2f seconds\n",
 	 vdata->starttime - vdata->timebrid);
 
+  free((void *) rest_b);
+}
+
+int *restB(Vdata *vdata, GAPdata *gapdata){
+  int	i, j;		/* indices of agents and jobs */
+  int	*rest_b;	/* the amount of resource available at each agent */
+  int	cost, penal;	/* the cost; the penalty = the total capacity excess */
+  int	temp;		/* temporary variable */
+  rest_b = (int *) malloc_e(gapdata->m * sizeof(int));
+  cost = penal = 0;
+  for(i=0; i<gapdata->m; i++){rest_b[i] = gapdata->b[i];}
+  for(j=0; j<gapdata->n; j++){
+    rest_b[vdata->bestsol[j]] -= gapdata->a[vdata->bestsol[j]][j];
+    cost += gapdata->c[vdata->bestsol[j]][j];
+  }
+  for(i=0; i<gapdata->m; i++){
+    temp = rest_b[i];
+    if(temp<0){penal -= temp;}
+  }
+  return rest_b;
+  free((void *) rest_b);
+}
+int isfeasible(Vdata *vdata, GAPdata *gapdata){
+  // 1ならok 0ならだめ
+  int	i, j;		/* indices of agents and jobs */
+  int	*rest_b;	/* the amount of resource available at each agent */
+  int	cost, penal;	/* the cost; the penalty = the total capacity excess */
+  int	temp;		/* temporary variable */
+  rest_b = (int *) malloc_e(gapdata->m * sizeof(int));
+  cost = penal = 0;
+  for(i=0; i<gapdata->m; i++){rest_b[i] = gapdata->b[i];}
+  for(j=0; j<gapdata->n; j++){
+    rest_b[vdata->bestsol[j]] -= gapdata->a[vdata->bestsol[j]][j];
+    cost += gapdata->c[vdata->bestsol[j]][j];
+  }
+  for(i=0; i<gapdata->m; i++){
+    temp = rest_b[i];
+    if(temp<0){penal -= temp;}
+  }
+  if(penal>0){
+    return 0;
+  }else{
+    return 1;
+  }
+  
   free((void *) rest_b);
 }
 
@@ -265,6 +312,11 @@ int main(int argc, char *argv[])
   int F[gapdata.n][gapdata.m];
   // 資源量が1番少ないときのインデックスを記憶
   for (int iternum=0;iternum<gapdata.n;iternum++){
+    printf("のこりb: ");
+    for (int i=0;i<gapdata.m;i++){
+      printf("%d ",b[i]);
+    }
+    printf("\n");
     for (int i=0;i<gapdata.n;i++){
       for (int j=0;j<gapdata.m;j++){
         if (a[j][i] <= b[j]){
@@ -286,6 +338,7 @@ int main(int argc, char *argv[])
     for (int i=0;i<gapdata.n;i++){
       int MinIdx = 0;
       int MinVal = 99999999;
+      int SecondMinVal=99999999;
       int MaxVal = 0;
       for (int j=0;j<gapdata.m;j++){
         if (F[i][j] != -1){
@@ -293,20 +346,40 @@ int main(int argc, char *argv[])
             MinVal = a[j][i];
             MinIdx = j;
           }
-          if (MaxVal <= a[j][i]) MaxVal = a[j][i];
+          else if (a[j][i] < SecondMinVal){
+            MaxVal = a[j][i];
+            SecondMinVal = a[j][i];
+          } 
         }
       }
-      if (MaxVal-MinVal > MaxDiff){
-        MaxDiff = MaxVal-MinVal;
+      if (MinVal != 99999999 && SecondMinVal == 99999999){
+        MaxDiff = 0;
         MaxDiffIdx = i;
         DeleteIdx = MinIdx;
+      }else if (MinVal != 99999999 && SecondMinVal != 99999999){
+        if (SecondMinVal-MinVal > MaxDiff){
+          MaxDiff = SecondMinVal-MinVal;
+          MaxDiffIdx = i;
+          DeleteIdx = MinIdx;
+        }
       }
-
     }
     // printf("MaxDiff %d\n",MaxDiff);
     // printf("Idx %d\n",MaxDiffIdx);
-    // printf("DeleteIdx %d\n",DeleteIdx);
+    if (a[DeleteIdx][MaxDiffIdx] == 999){
+      int Maxb = b[0];
+      for (int i=1;i<gapdata.m;i++){
+        if (Maxb < b[i]) {
+          DeleteIdx = i;
+          Maxb = b[i];
+          // printf("へんこう ");
+        }
+      }
+
+    }
+    // printf(" DeleteIdx %d\n",DeleteIdx);
     vdata.bestsol[MaxDiffIdx] = DeleteIdx;
+    b[DeleteIdx] -= a[DeleteIdx][MaxDiffIdx];
     for (int i=0;i<gapdata.m;i++){
       // printf("%d ",i);
       a[i][MaxDiffIdx] = 999;
@@ -317,13 +390,43 @@ int main(int argc, char *argv[])
 
 
   }
+  int ok = isfeasible(&vdata, &gapdata);
+  while (ok == 0){
+    int MaxIdx=-1;
+    int MaxRest = -999999;
+    int MinIdx=-1;
+    int MinRest = 999999;
+    int* restArray = restB(&vdata, &gapdata);
+    for (int i=0;i<gapdata.m;i++){
+      printf("%d ",restArray[i]);
+      if (restArray[i] < MinRest){
+        MinRest=restArray[i];
+        MinIdx = i;
+      }
+      if (restArray[i] > MaxRest){
+        MaxRest = restArray[i];
+        MaxIdx = i;
+      }
+    }  
+    printf("\n");
+    printf("max %d ",MaxIdx);
+    printf("min %d",MinIdx);
+    printf("\n");
+    for (int i=0;i<gapdata.n;i++){
+      if (vdata.bestsol[i] == MinIdx) {
+        vdata.bestsol[i] = MaxIdx;
+        break;
+      }
+    }
+    ok = isfeasible(&vdata, &gapdata);
+  }
 
 
 
-  // for (int i=0;i<gapdata.n;i++){
-  //   printf("%d ",vdata.bestsol[i]);
-  // }
-  // printf("\n");
+  for (int i=0;i<gapdata.n;i++){
+    printf("%d ",vdata.bestsol[i]);
+  }
+  printf("\n");
 
   vdata.endtime = cpu_time();
   recompute_cost(&vdata, &gapdata);
