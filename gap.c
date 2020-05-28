@@ -310,13 +310,12 @@ int main(int argc, char *argv[])
     b[i] = gapdata.b[i];
   }
   int F[gapdata.n][gapdata.m];
-  // 資源量が1番少ないときのインデックスを記憶
   for (int iternum=0;iternum<gapdata.n;iternum++){
-    printf("のこりb: ");
-    for (int i=0;i<gapdata.m;i++){
-      printf("%d ",b[i]);
-    }
-    printf("\n");
+    // printf("rest b: ");
+    // for (int i=0;i<gapdata.m;i++){
+    //   printf("%d ",b[i]);
+    // }
+    // printf("\n");
     for (int i=0;i<gapdata.n;i++){
       for (int j=0;j<gapdata.m;j++){
         if (a[j][i] <= b[j]){
@@ -326,12 +325,6 @@ int main(int argc, char *argv[])
         }
       }
     }
-    // for (int i=0;i<gapdata.n;i++){
-    //   for (int j=0;j<gapdata.m;j++){
-    //     printf("%d ",F[i][j]);
-    //   }
-    //   printf("\n");
-    // }
     int MaxDiff = 0;
     int MaxDiffIdx = 0;
     int DeleteIdx = 0;
@@ -372,7 +365,6 @@ int main(int argc, char *argv[])
         if (Maxb < b[i]) {
           DeleteIdx = i;
           Maxb = b[i];
-          // printf("へんこう ");
         }
       }
 
@@ -398,7 +390,6 @@ int main(int argc, char *argv[])
     int MinRest = 999999;
     int* restArray = restB(&vdata, &gapdata);
     for (int i=0;i<gapdata.m;i++){
-      printf("%d ",restArray[i]);
       if (restArray[i] < MinRest){
         MinRest=restArray[i];
         MinIdx = i;
@@ -408,10 +399,6 @@ int main(int argc, char *argv[])
         MaxIdx = i;
       }
     }  
-    printf("\n");
-    printf("max %d ",MaxIdx);
-    printf("min %d",MinIdx);
-    printf("\n");
     for (int i=0;i<gapdata.n;i++){
       if (vdata.bestsol[i] == MinIdx) {
         vdata.bestsol[i] = MaxIdx;
@@ -423,10 +410,10 @@ int main(int argc, char *argv[])
 
 
 
-  for (int i=0;i<gapdata.n;i++){
-    printf("%d ",vdata.bestsol[i]);
-  }
-  printf("\n");
+  // for (int i=0;i<gapdata.n;i++){
+  //   printf("%d ",vdata.bestsol[i]);
+  // }
+  // printf("\n");
 
   vdata.endtime = cpu_time();
   recompute_cost(&vdata, &gapdata);
