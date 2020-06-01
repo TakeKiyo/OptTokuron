@@ -52,6 +52,8 @@ typedef struct {
   double	starttime;	/* the time the search started */
   double	endtime;	/* the time the search ended */
   int		*bestsol;	/* the best solution found so far */
+  int   *tempsol; 
+  int bestcost;
   /* Never modify the above four lines. */
   /* You can add more components below. */
 } Vdata;		/* various data often necessary during the search */
@@ -66,6 +68,7 @@ void recompute_cost(Vdata *vdata, GAPdata *gapdata);
 void *malloc_e(size_t size);
 int *restB(Vdata *vdata, GAPdata *gapdata);
 int isfeasible(Vdata *vdata, GAPdata *gapdata);
+int *computeCost(Vdata *vdata, GAPdata *gapdata);
 
 /***** check the feasibility and recompute the cost **************************/
 /***** NEVER MODIFY THIS SUBROUTINE! *****************************************/
@@ -147,6 +150,34 @@ int isfeasible(Vdata *vdata, GAPdata *gapdata){
   free((void *) rest_b);
 }
 
+int *computeCost(Vdata *vdata, GAPdata *gapdata){
+  // 1番目にfeasibleかどうか，2番目にcostを返す
+  int	i, j;		/* indices of agents and jobs */
+  int	*rest_b;	/* the amount of resource available at each agent */
+  int	cost, penal;	/* the cost; the penalty = the total capacity excess */
+  int	temp;		/* temporary variable */
+  int *ReturnArray;
+  rest_b = (int *) malloc_e(gapdata->m * sizeof(int));
+  cost = penal = 0;
+
+  ReturnArray = (int *) malloc_e(2);
+  for(i=0; i<gapdata->m; i++){rest_b[i] = gapdata->b[i];}
+  for(j=0; j<gapdata->n; j++){
+    rest_b[vdata->tempsol[j]] -= gapdata->a[vdata->tempsol[j]][j];
+    cost += gapdata->c[vdata->tempsol[j]][j];
+  }
+  for(i=0; i<gapdata->m; i++){
+    temp = rest_b[i];
+    if(temp<0){penal -= temp;}
+  }
+  ReturnArray[0] = penal;
+  ReturnArray[1] = cost;
+  return ReturnArray;
+  free((void *) rest_b);
+  free((void *) ReturnArray);
+
+}
+
 /***** read a solution from STDIN ********************************************/
 void read_sol(Vdata *vdata, GAPdata *gapdata)
 {
@@ -168,8 +199,10 @@ void prepare_memory(Vdata *vdata, GAPdata *gapdata)
   int j;
 
   vdata->bestsol = (int *)  malloc_e(gapdata->n * sizeof(int));
+  vdata->tempsol = (int *)  malloc_e(gapdata->n * sizeof(int));
   /* the next line is just to avoid confusion */
   for(j=0; j<gapdata->n; j++){vdata->bestsol[j] = 0;}
+  for(j=0; j<gapdata->n; j++){vdata->tempsol[j] = 0;}
 }
 
 /***** free memory space *****************************************************/
@@ -177,6 +210,7 @@ void prepare_memory(Vdata *vdata, GAPdata *gapdata)
 void free_memory(Vdata *vdata, GAPdata *gapdata)
 {
   free((void *) vdata->bestsol);
+  free((void *) vdata->tempsol);
   free((void *) gapdata->c[0]);
   free((void *) gapdata->c);
   free((void *) gapdata->a[0]);
@@ -410,8 +444,58 @@ int main(int argc, char *argv[])
 
 
 
+  printf("残り資源量 \n");
+   int* restArray = restB(&vdata, &gapdata);
+   for (int i=0;i<gapdata.m;i++){
+     printf("%d ",restArray[i]);
+   }
+   printf("\n");
+
+  // 初期解生成 終了
+
+  // timelimになるまで改善
+  for (int i=0;i<gapdata.n;i++){
+    vdata.tempsol[i] = vdata.bestsol[i];
+  }
+  int BestCost = computeCost(&vdata, &gapdata)[1];
+  
+
+  int temp;
+  int firstIdx;
+  int secondIdx;
+  int Cnt = 0;
+  while ((double)cpu_time() - vdata.starttime < param.timelim){
+    Cnt++;
+    firstIdx = rand() % gapdata.n;
+    secondIdx = rand() % gapdata.n;
+    while (firstIdx == secondIdx){
+      secondIdx =rand() % gapdata.n;
+    }
+    temp = vdata.tempsol[firstIdx];
+    vdata.tempsol[firstIdx] = vdata.tempsol[secondIdx];
+    vdata.tempsol[secondIdx] = temp;
+    int *Result = computeCost(&vdata, &gapdata);
+    // printf("%d, %d\n",Result[0],Result[1]);
+    if (Result[0] == 0 && Result[1]<BestCost){
+      vdata.bestsol[firstIdx] = vdata.tempsol[firstIdx];
+      vdata.bestsol[secondIdx] = vdata.tempsol[secondIdx];
+      BestCost = Result[1];
+      printf("%d\n",Result[1]);
+    }else{
+      vdata.tempsol[firstIdx] = vdata.bestsol[firstIdx];
+      vdata.tempsol[secondIdx] = vdata.bestsol[secondIdx];
+      // printf("更新してない\n");
+    }
+  }
+  for (int i=0;i<gapdata.n;i++){
+    printf("%d ",vdata.bestsol[i]);
+  }
+  printf("\n");
+  printf("cnt: %d\n",Cnt);
+
+  // vdata.tempsol = vdata.bestsol;
   // for (int i=0;i<gapdata.n;i++){
-  //   printf("%d ",vdata.bestsol[i]);
+  //   printf("%d ",vdata.tempsol[i]);
   // }
   // printf("\n");
 
