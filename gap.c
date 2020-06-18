@@ -467,9 +467,7 @@ int main(int argc, char *argv[])
   int Idx;
   int OtherJob;
 
-  int Cnt = 0;
-  while ((double)cpu_time() - vdata.starttime < param.timelim){
-    Cnt++;
+  // while ((double)cpu_time() - vdata.starttime < 1){
 
     // swap
     // firstIdx = rand() % gapdata.n;
@@ -482,39 +480,54 @@ int main(int argc, char *argv[])
     // vdata.tempsol[secondIdx] = temp;
 
     // shift
-    Idx = rand() % gapdata.n;
-    OtherJob = rand()%gapdata.m;
-    while(OtherJob == vdata.tempsol[Idx]){
-      OtherJob = rand()%gapdata.m;
-    }
-    vdata.tempsol[Idx] = OtherJob;
+    // Idx = rand() % gapdata.n;
+    // OtherJob = rand()%gapdata.m;
+    // while(OtherJob == vdata.tempsol[Idx]){
+    //   OtherJob = rand()%gapdata.m;
+    // }
+    // vdata.tempsol[Idx] = OtherJob;
+    // OtherJob=1;
+    // Idx=1;
 
-    int *Result = computeCost(&vdata, &gapdata);
+    // int *Result = computeCost(&vdata, &gapdata);
     // printf("%d, %d\n",Result[0],Result[1]);
-    if (Result[0] == 0 && Result[1]<BestCost){
+    // if (Result[0] == 0 && Result[1]<BestCost){
       // swap
       // vdata.bestsol[firstIdx] = vdata.tempsol[firstIdx];
       // vdata.bestsol[secondIdx] = vdata.tempsol[secondIdx];
 
       // shift
-      vdata.bestsol[Idx] = vdata.tempsol[Idx];
-      BestCost = Result[1];
-      printf("%d\n",Result[1]);
-    }else{
+      // vdata.bestsol[Idx] = vdata.tempsol[Idx];
+      // BestCost = Result[1];
+      // printf("%d\n",Result[1]);
+    // }else{
       // swap
       // vdata.tempsol[firstIdx] = vdata.bestsol[firstIdx];
       // vdata.tempsol[secondIdx] = vdata.bestsol[secondIdx];
 
       // shift
-      vdata.tempsol[Idx] = vdata.bestsol[Idx];
+      // vdata.tempsol[Idx] = vdata.bestsol[Idx];
       // printf("更新してない\n");
+    // }
+  // }
+
+  // 局所探索するリストを作成する準備
+  int test[5*10][2];
+  int testIdx=0;
+  for (int i=0;i<5;i++){
+    for (int j=0;j<10;j++){
+      test[testIdx][0] = i;
+      test[testIdx][1] = j;
+      testIdx++;
     }
+  }
+  for (int i=0;i<5*10;i++){
+    printf("%d,%d\n",test[i][0],test[i][1]);
   }
   // for (int i=0;i<gapdata.n;i++){
   //   printf("%d ",vdata.bestsol[i]);
   // }
   // printf("\n");
-  printf("cnt: %d\n",Cnt);
 
   // vdata.tempsol = vdata.bestsol;
   // for (int i=0;i<gapdata.n;i++){
