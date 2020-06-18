@@ -521,6 +521,10 @@ int main(int argc, char *argv[])
       testIdx++;
     }
   }
+  // ここでシャッフルしたい
+
+
+
   for (int i=0;i<5*10;i++){
     printf("%d,%d\n",test[i][0],test[i][1]);
   }
