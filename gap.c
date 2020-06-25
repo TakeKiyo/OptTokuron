@@ -548,14 +548,15 @@ int main(int argc, char *argv[])
   shuffle(RandomIdx,gapdata.n*gapdata.m);
 
   int AgentIdx,JobIdx;
-
+  int *Result;
   // 局所探索を1回行う
   for (int i=0;i<gapdata.n*gapdata.m;i++){
     AgentIdx = Neighbor[RandomIdx[i]][0];
     JobIdx = Neighbor[RandomIdx[i]][1];
     // printf("%d,%d\n",AgentIdx,JobIdx);
     vdata.tempsol[AgentIdx] = JobIdx;
-    int *Result = computeCost(&vdata, &gapdata);
+    Result = (int *)malloc(2 * sizeof(int));
+    Result = computeCost(&vdata, &gapdata);
     if (Result[0] == 0 && Result[1]<BestCost){
       vdata.bestsol[AgentIdx] = vdata.tempsol[AgentIdx];
       BestCost = Result[1];
@@ -563,11 +564,64 @@ int main(int argc, char *argv[])
     }else{
       vdata.tempsol[AgentIdx] = vdata.bestsol[AgentIdx];
     }
+    free(Result);  
   }
 
-  // 反復局所探索法
+
+
+  // 反復局所探索法 kick後の探索は，tempsolとtempBestsolに記憶
+  for (int i=0;i<gapdata.n;i++){
+    vdata.tempsol[i] = vdata.bestsol[i];
+  }
+  int tempBestCost;
   while((double)cpu_time() - vdata.starttime < 1){
     // kick
+    // とりあえず，2回,shift操作を行ってみる
+    int tempCnt = 0;
+    for (int i=0;i<gapdata.m;i++){
+      AgentIdx = rand() % gapdata.n;
+      JobIdx = rand()%gapdata.m;
+      while(JobIdx == vdata.tempsol[AgentIdx]){
+        JobIdx = rand()%gapdata.m;
+      }
+      vdata.tempsol[AgentIdx] = JobIdx;
+    }
+    Result = (int *)malloc(2 * sizeof(int));
+    Result = computeCost(&vdata, &gapdata);
+    if (Result[0] == 0){
+      tempBestCost = Result[1];
+    }else{
+      tempBestCost = BestCost;
+    }
+    free(Result);
+
+    for (int i=0;i<gapdata.n;i++){
+      vdata.tempBestsol[i] = vdata.tempsol[i];
+    }
+
+    shuffle(RandomIdx,gapdata.n*gapdata.m);
+    // printf("tempBestCost: %d\n",tempBestCost);
+    for (int i=0;i<gapdata.n*gapdata.m;i++){
+      AgentIdx = Neighbor[RandomIdx[i]][0];
+      JobIdx = Neighbor[RandomIdx[i]][1];
+      vdata.tempsol[AgentIdx] = JobIdx;
+      int *Result = computeCost(&vdata, &gapdata);
+      if (Result[0] == 0 && Result[1]<tempBestCost){
+        vdata.tempBestsol[AgentIdx] = vdata.tempsol[AgentIdx];
+        BestCost = Result[1];
+        printf("%d\n",BestCost);
+      }else{
+        vdata.tempsol[AgentIdx] = vdata.tempBestsol[AgentIdx];
+      }
+    }
+    if (tempBestCost < BestCost){
+      for (int i=0;i<gapdata.n;i++){
+        vdata.bestsol[i] = vdata.tempBestsol[i];
+        printf("kickしてよかった\n");
+      }
+    }else{
+      // printf("kickしてよかった\n");
+    }
   }
 
 
