@@ -295,6 +295,19 @@ void *malloc_e( size_t size ) {
   return s;
 }
 
+
+
+void shuffle(int arr[],int n){
+  for (int i=n;i>1;i--){
+    int a=i-1;
+    int b=rand()%i;
+    int tmp = arr[b];
+    arr[b] = arr[a];
+    arr[a] = tmp;
+  }
+  return;
+}
+
 /***** main ******************************************************************/
 int main(int argc, char *argv[])
 {
@@ -510,24 +523,53 @@ int main(int argc, char *argv[])
       // printf("更新してない\n");
     // }
   // }
-
+  printf("%d\n",gapdata.m);
   // 局所探索するリストを作成する準備
-  int test[5*10][2];
+  int Neighbor[gapdata.n*gapdata.m][2];
   int testIdx=0;
-  for (int i=0;i<5;i++){
-    for (int j=0;j<10;j++){
-      test[testIdx][0] = i;
-      test[testIdx][1] = j;
+  for (int i=0;i<gapdata.m;i++){
+    for (int j=0;j<gapdata.n;j++){
+      Neighbor[testIdx][0] = j;
+      Neighbor[testIdx][1] = i;
       testIdx++;
     }
   }
-  // ここでシャッフルしたい
-
-
-
-  for (int i=0;i<5*10;i++){
-    printf("%d,%d\n",test[i][0],test[i][1]);
+  int RandomIdx[gapdata.n*gapdata.m];
+  for (int i=0;i<gapdata.n*gapdata.m;i++){
+    RandomIdx[i] = i;
   }
+
+
+  // ここでシャッフルしたい
+  shuffle(RandomIdx,gapdata.n*gapdata.m);
+
+  int AgentIdx,JobIdx;
+
+  // 局所探索を1回行う
+  for (int i=0;i<gapdata.n*gapdata.m;i++){
+    AgentIdx = Neighbor[RandomIdx[i]][0];
+    JobIdx = Neighbor[RandomIdx[i]][1];
+    // printf("%d,%d\n",AgentIdx,JobIdx);
+    vdata.tempsol[AgentIdx] = JobIdx;
+    int *Result = computeCost(&vdata, &gapdata);
+    if (Result[0] == 0 && Result[1]<BestCost){
+      vdata.bestsol[AgentIdx] = vdata.tempsol[AgentIdx];
+      BestCost = Result[1];
+      printf("%d\n",BestCost);
+    }else{
+      vdata.tempsol[AgentIdx] = vdata.bestsol[AgentIdx];
+    }
+  }
+
+  
+
+
+
+
+
+  // for (int i=0;i<gapdata.n*gapdata.m;i++){
+  //   printf("%d,%d\n",Neighbor[i][0],Neighbor[i][1]);
+  // }
   // for (int i=0;i<gapdata.n;i++){
   //   printf("%d ",vdata.bestsol[i]);
   // }
