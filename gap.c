@@ -53,6 +53,7 @@ typedef struct {
   double	endtime;	/* the time the search ended */
   int		*bestsol;	/* the best solution found so far */
   int   *tempsol; 
+  int   *tempBestsol;
   int bestcost;
   /* Never modify the above four lines. */
   /* You can add more components below. */
@@ -200,9 +201,11 @@ void prepare_memory(Vdata *vdata, GAPdata *gapdata)
 
   vdata->bestsol = (int *)  malloc_e(gapdata->n * sizeof(int));
   vdata->tempsol = (int *)  malloc_e(gapdata->n * sizeof(int));
+  vdata->tempBestsol = (int *)  malloc_e(gapdata->n * sizeof(int));
   /* the next line is just to avoid confusion */
   for(j=0; j<gapdata->n; j++){vdata->bestsol[j] = 0;}
   for(j=0; j<gapdata->n; j++){vdata->tempsol[j] = 0;}
+  for(j=0; j<gapdata->n; j++){vdata->tempBestsol[j] = 0;}
 }
 
 /***** free memory space *****************************************************/
@@ -211,6 +214,7 @@ void free_memory(Vdata *vdata, GAPdata *gapdata)
 {
   free((void *) vdata->bestsol);
   free((void *) vdata->tempsol);
+  free((void *) vdata->tempBestsol);
   free((void *) gapdata->c[0]);
   free((void *) gapdata->c);
   free((void *) gapdata->a[0]);
@@ -473,12 +477,12 @@ int main(int argc, char *argv[])
   int BestCost = computeCost(&vdata, &gapdata)[1];
   
 
-  int temp;
-  int firstIdx;
-  int secondIdx;
+  // int temp;
+  // int firstIdx;
+  // int secondIdx;
 
-  int Idx;
-  int OtherJob;
+  // int Idx;
+  // int OtherJob;
 
   // while ((double)cpu_time() - vdata.starttime < 1){
 
@@ -561,7 +565,14 @@ int main(int argc, char *argv[])
     }
   }
 
-  
+  // 反復局所探索法
+  while((double)cpu_time() - vdata.starttime < 1){
+    // kick
+  }
+
+
+
+
 
 
 
