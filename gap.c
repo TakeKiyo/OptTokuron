@@ -301,7 +301,17 @@ void *malloc_e( size_t size ) {
 
 
 
-void shuffle(int arr[],int n){
+void ShiftShuffle(int arr[],int n){
+  for (int i=n;i>1;i--){
+    int a=i-1;
+    int b=rand()%i;
+    int tmp = arr[b];
+    arr[b] = arr[a];
+    arr[a] = tmp;
+  }
+  return;
+}
+void SwapShuffle(int arr[],int n){
   for (int i=n;i>1;i--){
     int a=i-1;
     int b=rand()%i;
@@ -529,100 +539,172 @@ int main(int argc, char *argv[])
   // }
   printf("%d\n",gapdata.m);
   // 局所探索するリストを作成する準備
-  int Neighbor[gapdata.n*gapdata.m][2];
+  int ShiftNeighbor[gapdata.n*gapdata.m][2];
+  int SwapNeighbor[gapdata.n*gapdata.n][2];
   int testIdx=0;
   for (int i=0;i<gapdata.m;i++){
     for (int j=0;j<gapdata.n;j++){
-      Neighbor[testIdx][0] = j;
-      Neighbor[testIdx][1] = i;
+      ShiftNeighbor[testIdx][0] = j;
+      ShiftNeighbor[testIdx][1] = i;
       testIdx++;
     }
   }
-  int RandomIdx[gapdata.n*gapdata.m];
+  testIdx=0;
+  for (int i=0;i<gapdata.n;i++){
+    for (int j=0;j<gapdata.n;j++){
+      SwapNeighbor[testIdx][0] = i;
+      SwapNeighbor[testIdx][1] = j; 
+      testIdx++;
+    }
+  }
+
+  int ShiftRandomIdx[gapdata.n*gapdata.m];
   for (int i=0;i<gapdata.n*gapdata.m;i++){
-    RandomIdx[i] = i;
+    ShiftRandomIdx[i] = i;
+  }
+
+  int SwapRandomIdx[gapdata.n*gapdata.n];
+  for (int i=0;i<gapdata.n*gapdata.n;i++){
+    SwapRandomIdx[i] = i;
   }
 
 
-  // ここでシャッフルしたい
-  shuffle(RandomIdx,gapdata.n*gapdata.m);
 
-  int AgentIdx,JobIdx;
+  // ここでシャッフルしたい
+  ShiftShuffle(ShiftRandomIdx,gapdata.n*gapdata.m);
+
+  // int AgentIdx,JobIdx;
   int *Result;
-  // 局所探索を1回行う
-  for (int i=0;i<gapdata.n*gapdata.m;i++){
-    AgentIdx = Neighbor[RandomIdx[i]][0];
-    JobIdx = Neighbor[RandomIdx[i]][1];
+
+  // shift近傍探索を1回行う
+  // for (int i=0;i<gapdata.n*gapdata.m;i++){
+  //   AgentIdx = ShiftNeighbor[ShiftRandomIdx[i]][0];
+  //   JobIdx = ShiftNeighbor[ShiftRandomIdx[i]][1];
+  //   // printf("%d,%d\n",AgentIdx,JobIdx);
+  //   vdata.tempsol[AgentIdx] = JobIdx;
+  //   Result = (int *)malloc(2 * sizeof(int));
+  //   Result = computeCost(&vdata, &gapdata);
+  //   if (Result[0] == 0 && Result[1]<BestCost){
+  //     vdata.bestsol[AgentIdx] = vdata.tempsol[AgentIdx];
+  //     BestCost = Result[1];
+  //     printf("%d\n",BestCost);
+  //   }else{
+  //     vdata.tempsol[AgentIdx] = vdata.bestsol[AgentIdx];
+  //   }
+  //   free(Result);  
+  // }
+
+  SwapShuffle(SwapRandomIdx,gapdata.n*gapdata.n);
+  // swap近傍探索を1回行う
+  int FirstAgentIdx,SecondAgentIdx,FirstJobIdx,SecondJobIdx;
+  for (int i=0;i<gapdata.n*gapdata.n;i++){
+    FirstAgentIdx = SwapNeighbor[SwapRandomIdx[i]][0];
+    FirstJobIdx = vdata.tempsol[FirstAgentIdx];
+    SecondAgentIdx = SwapNeighbor[SwapRandomIdx[i]][1];
+    SecondJobIdx = vdata.tempsol[SecondAgentIdx];
     // printf("%d,%d\n",AgentIdx,JobIdx);
-    vdata.tempsol[AgentIdx] = JobIdx;
+    vdata.tempsol[SecondAgentIdx] = FirstJobIdx;
+    vdata.tempsol[FirstAgentIdx] = SecondJobIdx;
+
     Result = (int *)malloc(2 * sizeof(int));
     Result = computeCost(&vdata, &gapdata);
     if (Result[0] == 0 && Result[1]<BestCost){
-      vdata.bestsol[AgentIdx] = vdata.tempsol[AgentIdx];
+      vdata.bestsol[FirstAgentIdx] = vdata.tempsol[FirstAgentIdx];
+      vdata.bestsol[SecondAgentIdx] = vdata.tempsol[SecondAgentIdx];
       BestCost = Result[1];
       printf("%d\n",BestCost);
     }else{
-      vdata.tempsol[AgentIdx] = vdata.bestsol[AgentIdx];
+      vdata.tempsol[FirstAgentIdx] = vdata.bestsol[FirstAgentIdx];
+      vdata.tempsol[SecondAgentIdx] = vdata.bestsol[SecondAgentIdx];
     }
     free(Result);  
   }
 
 
+  
+  // 局所探索
+  // int noImprove = 0;
+  // while(noImprove == 0){
+  //   noImprove = 1;
+  //   ShiftShuffle(ShiftRandomIdx,gapdata.n*gapdata.m);
+  //   for (int i=0;i<gapdata.n*gapdata.m;i++){
+  //     AgentIdx = ShiftNeighbor[ShiftRandomIdx[i]][0];
+  //     JobIdx = ShiftNeighbor[ShiftRandomIdx[i]][1];
+  //     // printf("%d,%d\n",AgentIdx,JobIdx);
+  //     vdata.tempsol[AgentIdx] = JobIdx;
+  //     Result = (int *)malloc(2 * sizeof(int));
+  //     Result = computeCost(&vdata, &gapdata);
+  //     if (Result[0] == 0 && Result[1]<BestCost){
+  //       vdata.bestsol[AgentIdx] = vdata.tempsol[AgentIdx];
+  //       BestCost = Result[1];
+  //       noImprove=0;
+  //       printf("%d\n",BestCost);
+  //     }else{
+  //       vdata.tempsol[AgentIdx] = vdata.bestsol[AgentIdx];
+  //     }
+  //     free(Result);  
+  //   }
+  //   printf("近傍探索\n");
+  // }
 
+  
+
+
+  
   // 反復局所探索法 kick後の探索は，tempsolとtempBestsolに記憶
-  for (int i=0;i<gapdata.n;i++){
-    vdata.tempsol[i] = vdata.bestsol[i];
-  }
-  int tempBestCost;
-  while((double)cpu_time() - vdata.starttime < 1){
-    // kick
-    // とりあえず，2回,shift操作を行ってみる
-    int tempCnt = 0;
-    for (int i=0;i<gapdata.m;i++){
-      AgentIdx = rand() % gapdata.n;
-      JobIdx = rand()%gapdata.m;
-      while(JobIdx == vdata.tempsol[AgentIdx]){
-        JobIdx = rand()%gapdata.m;
-      }
-      vdata.tempsol[AgentIdx] = JobIdx;
-    }
-    Result = (int *)malloc(2 * sizeof(int));
-    Result = computeCost(&vdata, &gapdata);
-    if (Result[0] == 0){
-      tempBestCost = Result[1];
-    }else{
-      tempBestCost = BestCost;
-    }
-    free(Result);
+  // for (int i=0;i<gapdata.n;i++){
+  //   vdata.tempsol[i] = vdata.bestsol[i];
+  // }
+  // int tempBestCost;
+  // while((double)cpu_time() - vdata.starttime < 1){
+  //   // kick
+  //   // とりあえず，2回,shift操作を行ってみる
+  //   int tempCnt = 0;
+  //   for (int i=0;i<gapdata.m;i++){
+  //     AgentIdx = rand() % gapdata.n;
+  //     JobIdx = rand()%gapdata.m;
+  //     while(JobIdx == vdata.tempsol[AgentIdx]){
+  //       JobIdx = rand()%gapdata.m;
+  //     }
+  //     vdata.tempsol[AgentIdx] = JobIdx;
+  //   }
+  //   Result = (int *)malloc(2 * sizeof(int));
+  //   Result = computeCost(&vdata, &gapdata);
+  //   if (Result[0] == 0){
+  //     tempBestCost = Result[1];
+  //   }else{
+  //     tempBestCost = BestCost;
+  //   }
+  //   free(Result);
 
-    for (int i=0;i<gapdata.n;i++){
-      vdata.tempBestsol[i] = vdata.tempsol[i];
-    }
+  //   for (int i=0;i<gapdata.n;i++){
+  //     vdata.tempBestsol[i] = vdata.tempsol[i];
+  //   }
 
-    shuffle(RandomIdx,gapdata.n*gapdata.m);
-    // printf("tempBestCost: %d\n",tempBestCost);
-    for (int i=0;i<gapdata.n*gapdata.m;i++){
-      AgentIdx = Neighbor[RandomIdx[i]][0];
-      JobIdx = Neighbor[RandomIdx[i]][1];
-      vdata.tempsol[AgentIdx] = JobIdx;
-      int *Result = computeCost(&vdata, &gapdata);
-      if (Result[0] == 0 && Result[1]<tempBestCost){
-        vdata.tempBestsol[AgentIdx] = vdata.tempsol[AgentIdx];
-        BestCost = Result[1];
-        printf("%d\n",BestCost);
-      }else{
-        vdata.tempsol[AgentIdx] = vdata.tempBestsol[AgentIdx];
-      }
-    }
-    if (tempBestCost < BestCost){
-      for (int i=0;i<gapdata.n;i++){
-        vdata.bestsol[i] = vdata.tempBestsol[i];
-        printf("kickしてよかった\n");
-      }
-    }else{
-      // printf("kickしてよかった\n");
-    }
-  }
+  //   ShiftShuffle(ShiftRandomIdx,gapdata.n*gapdata.m);
+  //   // printf("tempBestCost: %d\n",tempBestCost);
+  //   for (int i=0;i<gapdata.n*gapdata.m;i++){
+  //     AgentIdx = ShiftNeighbor[ShiftRandomIdx[i]][0];
+  //     JobIdx = ShiftNeighbor[ShiftRandomIdx[i]][1];
+  //     vdata.tempsol[AgentIdx] = JobIdx;
+  //     int *Result = computeCost(&vdata, &gapdata);
+  //     if (Result[0] == 0 && Result[1]<tempBestCost){
+  //       vdata.tempBestsol[AgentIdx] = vdata.tempsol[AgentIdx];
+  //       BestCost = Result[1];
+  //       printf("%d\n",BestCost);
+  //     }else{
+  //       vdata.tempsol[AgentIdx] = vdata.tempBestsol[AgentIdx];
+  //     }
+  //   }
+  //   if (tempBestCost < BestCost){
+  //     for (int i=0;i<gapdata.n;i++){
+  //       vdata.bestsol[i] = vdata.tempBestsol[i];
+  //       printf("kickしてよかった\n");
+  //     }
+  //   }else{
+  //     // printf("kickしてよかった\n");
+  //   }
+  // }
 
 
 
@@ -633,7 +715,7 @@ int main(int argc, char *argv[])
 
 
   // for (int i=0;i<gapdata.n*gapdata.m;i++){
-  //   printf("%d,%d\n",Neighbor[i][0],Neighbor[i][1]);
+  //   printf("%d,%d\n",ShiftNeighbor[i][0],ShiftNeighbor[i][1]);
   // }
   // for (int i=0;i<gapdata.n;i++){
   //   printf("%d ",vdata.bestsol[i]);
