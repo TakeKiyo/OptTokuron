@@ -325,8 +325,6 @@ void SwapShuffle(int arr[],int n){
 }
 
 int accept_prob(double delta, double T){
-
-
   if (delta<0){
     return 1;
   }else if ((double)exp(-delta/T) > (double)rand()/RAND_MAX){
@@ -485,13 +483,14 @@ int main(int argc, char *argv[])
   }
 
 
-
+/*
   printf("残り資源量 \n");
    int* restArray = restB(&vdata, &gapdata);
    for (int i=0;i<gapdata.m;i++){
      printf("%d ",restArray[i]);
    }
    printf("\n");
+*/
 
   // 初期解生成 終了
 
@@ -600,9 +599,8 @@ int main(int argc, char *argv[])
   }
 
   */
-
   // アニーリング法の初期温度設定
-  int T=10;
+  double T=10;
   int tmp_delta,accepted_cnt,all_cnt;
   int tmp;
   do{
@@ -651,6 +649,85 @@ int main(int argc, char *argv[])
       vdata.tempsol[SecondAgentIdx] = vdata.bestsol[SecondAgentIdx];
     }
   }while(accepted_cnt <= 190);
+
+  
+  int tempBestCost = BestCost;
+  for (int i=0;i<gapdata.n;i++){
+    vdata.tempBestsol[i] = vdata.bestsol[i];
+  }
+  // /*
+  int delta;
+  while(T>1.0){
+    // shift局所探索
+    ShiftShuffle(ShiftRandomIdx,gapdata.n*gapdata.m);
+    for (int i=0;i<gapdata.n*gapdata.m;i++){
+      AgentIdx = ShiftNeighbor[ShiftRandomIdx[i]][0];
+      JobIdx = ShiftNeighbor[ShiftRandomIdx[i]][1];
+      vdata.tempsol[AgentIdx] = JobIdx;
+      Result = (int *)malloc(2 * sizeof(int));
+      Result = computeCost(&vdata, &gapdata);
+      if (Result[0] == 0){
+        delta = Result[1]-tempBestCost;
+        // if (delta<0){
+        //   vdata.bestsol[AgentIdx] = vdata.tempsol[AgentIdx];
+        // } 
+        if (accept_prob(delta,T)==1){
+          vdata.bestsol[AgentIdx] = vdata.tempsol[AgentIdx];
+          tempBestCost = Result[1];
+        }else{
+          vdata.tempsol[AgentIdx] = vdata.bestsol[AgentIdx];
+        }
+      }else{
+        vdata.tempsol[AgentIdx] = vdata.bestsol[AgentIdx];
+      }
+      free(Result);  
+    }
+
+
+    // swap近傍
+    SwapShuffle(SwapRandomIdx,gapdata.n*gapdata.n);
+    for (int i=0;i<gapdata.n*gapdata.n;i++){
+      FirstAgentIdx = SwapNeighbor[SwapRandomIdx[i]][0];
+      FirstJobIdx = vdata.tempsol[FirstAgentIdx];
+      SecondAgentIdx = SwapNeighbor[SwapRandomIdx[i]][1];
+      SecondJobIdx = vdata.tempsol[SecondAgentIdx];
+      vdata.tempsol[SecondAgentIdx] = FirstJobIdx;
+      vdata.tempsol[FirstAgentIdx] = SecondJobIdx;
+      Result = (int *)malloc(2 * sizeof(int));
+      Result = computeCost(&vdata, &gapdata);
+      if (Result[0] == 0){
+        delta = Result[1]-tempBestCost;
+        // if (delta < 0){
+        //   vdata.bestsol[FirstAgentIdx] = vdata.tempsol[FirstAgentIdx];
+        //   vdata.bestsol[SecondAgentIdx] = vdata.tempsol[SecondAgentIdx];
+        // }
+        if (accept_prob(delta,T)==1){
+          vdata.bestsol[FirstAgentIdx] = vdata.tempsol[FirstAgentIdx];
+          vdata.bestsol[SecondAgentIdx] = vdata.tempsol[SecondAgentIdx];
+          tempBestCost = Result[1];
+        }else{
+          vdata.tempsol[FirstAgentIdx] = vdata.bestsol[FirstAgentIdx];
+          vdata.tempsol[SecondAgentIdx] = vdata.bestsol[SecondAgentIdx];
+        }
+      }else{
+        vdata.tempsol[FirstAgentIdx] = vdata.bestsol[FirstAgentIdx];
+        vdata.tempsol[SecondAgentIdx] = vdata.bestsol[SecondAgentIdx];
+      }
+      free(Result);  
+    }
+    if ((double)cpu_time() - vdata.starttime  > TIMELIM){
+      break;
+    }
+
+
+    T= T*0.97;
+    printf("T %f\n ",T);
+  }
+
+  
+
+  // */
+
 
 
   
