@@ -655,6 +655,8 @@ int main(int argc, char *argv[])
   for (int i=0;i<gapdata.n;i++){
     vdata.tempBestsol[i] = vdata.bestsol[i];
   }
+
+
   // /*
   int delta;
   while(T>1.0){
@@ -668,17 +670,19 @@ int main(int argc, char *argv[])
       Result = computeCost(&vdata, &gapdata);
       if (Result[0] == 0){
         delta = Result[1]-tempBestCost;
-        // if (delta<0){
-        //   vdata.bestsol[AgentIdx] = vdata.tempsol[AgentIdx];
-        // } 
         if (accept_prob(delta,T)==1){
-          vdata.bestsol[AgentIdx] = vdata.tempsol[AgentIdx];
+          vdata.tempBestsol[AgentIdx] = vdata.tempsol[AgentIdx];
           tempBestCost = Result[1];
+          if (delta<0){
+            for (int i=0;i<gapdata.n;i++){
+              vdata.bestsol[i] = vdata.tempBestsol[i];
+            }
+          }
         }else{
-          vdata.tempsol[AgentIdx] = vdata.bestsol[AgentIdx];
+          vdata.tempsol[AgentIdx] = vdata.tempBestsol[AgentIdx];
         }
       }else{
-        vdata.tempsol[AgentIdx] = vdata.bestsol[AgentIdx];
+        vdata.tempsol[AgentIdx] = vdata.tempBestsol[AgentIdx];
       }
       free(Result);  
     }
@@ -697,21 +701,22 @@ int main(int argc, char *argv[])
       Result = computeCost(&vdata, &gapdata);
       if (Result[0] == 0){
         delta = Result[1]-tempBestCost;
-        // if (delta < 0){
-        //   vdata.bestsol[FirstAgentIdx] = vdata.tempsol[FirstAgentIdx];
-        //   vdata.bestsol[SecondAgentIdx] = vdata.tempsol[SecondAgentIdx];
-        // }
         if (accept_prob(delta,T)==1){
-          vdata.bestsol[FirstAgentIdx] = vdata.tempsol[FirstAgentIdx];
-          vdata.bestsol[SecondAgentIdx] = vdata.tempsol[SecondAgentIdx];
+          vdata.tempBestsol[FirstAgentIdx] = vdata.tempsol[FirstAgentIdx];
+          vdata.tempBestsol[SecondAgentIdx] = vdata.tempsol[SecondAgentIdx];
           tempBestCost = Result[1];
+          if (delta<0){
+            for (int i=0;i<gapdata.n;i++){
+              vdata.bestsol[i] = vdata.tempsol[i];
+            }
+          }
         }else{
-          vdata.tempsol[FirstAgentIdx] = vdata.bestsol[FirstAgentIdx];
-          vdata.tempsol[SecondAgentIdx] = vdata.bestsol[SecondAgentIdx];
+          vdata.tempsol[FirstAgentIdx] = vdata.tempBestsol[FirstAgentIdx];
+          vdata.tempsol[SecondAgentIdx] = vdata.tempBestsol[SecondAgentIdx];
         }
       }else{
-        vdata.tempsol[FirstAgentIdx] = vdata.bestsol[FirstAgentIdx];
-        vdata.tempsol[SecondAgentIdx] = vdata.bestsol[SecondAgentIdx];
+        vdata.tempsol[FirstAgentIdx] = vdata.tempBestsol[FirstAgentIdx];
+        vdata.tempsol[SecondAgentIdx] = vdata.tempBestsol[SecondAgentIdx];
       }
       free(Result);  
     }
@@ -723,6 +728,9 @@ int main(int argc, char *argv[])
     T= T*0.97;
     printf("T %f\n ",T);
   }
+  // for(int i=0;i<gapdata.n;i++){
+  //   vdata.bestsol[i] = vdata.tempBestsol[i];
+  // }
 
   
 
