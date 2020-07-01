@@ -385,11 +385,6 @@ int main(int argc, char *argv[])
   }
   int F[gapdata.n][gapdata.m];
   for (int iternum=0;iternum<gapdata.n;iternum++){
-    // printf("rest b: ");
-    // for (int i=0;i<gapdata.m;i++){
-    //   printf("%d ",b[i]);
-    // }
-    // printf("\n");
     for (int i=0;i<gapdata.n;i++){
       for (int j=0;j<gapdata.m;j++){
         if (a[j][i] <= b[j]){
@@ -431,8 +426,6 @@ int main(int argc, char *argv[])
         }
       }
     }
-    // printf("MaxDiff %d\n",MaxDiff);
-    // printf("Idx %d\n",MaxDiffIdx);
     if (a[DeleteIdx][MaxDiffIdx] == 999){
       int Maxb = b[0];
       for (int i=1;i<gapdata.m;i++){
@@ -443,14 +436,11 @@ int main(int argc, char *argv[])
       }
 
     }
-    // printf(" DeleteIdx %d\n",DeleteIdx);
     vdata.bestsol[MaxDiffIdx] = DeleteIdx;
     b[DeleteIdx] -= a[DeleteIdx][MaxDiffIdx];
     for (int i=0;i<gapdata.m;i++){
-      // printf("%d ",i);
       a[i][MaxDiffIdx] = 999;
     }
-    //  printf("\n");
 
     
 
@@ -482,19 +472,7 @@ int main(int argc, char *argv[])
     ok = isfeasible(&vdata, &gapdata);
   }
 
-
-/*
-  printf("残り資源量 \n");
-   int* restArray = restB(&vdata, &gapdata);
-   for (int i=0;i<gapdata.m;i++){
-     printf("%d ",restArray[i]);
-   }
-   printf("\n");
-*/
-
   // 初期解生成 終了
-
-  // timelimになるまで改善
   for (int i=0;i<gapdata.n;i++){
     vdata.tempsol[i] = vdata.bestsol[i];
   }
@@ -595,8 +573,9 @@ int main(int argc, char *argv[])
       printf("改善なし\n");
     }
   }
-
   */
+
+
   // アニーリング法の初期温度設定
   double T=10;
   int tmp_delta,accepted_cnt,all_cnt;
@@ -646,7 +625,7 @@ int main(int argc, char *argv[])
       vdata.tempsol[FirstAgentIdx] = vdata.bestsol[FirstAgentIdx];
       vdata.tempsol[SecondAgentIdx] = vdata.bestsol[SecondAgentIdx];
     }
-  }while(accepted_cnt <= 190);
+  }while(accepted_cnt <= 180);
 
   
   int tempBestCost = BestCost;
@@ -655,10 +634,15 @@ int main(int argc, char *argv[])
   }
 
   int delta;
+  int consecutive_count;
   while(T>1.0){
+    consecutive_count = 0;
     // shift局所探索
     ShiftShuffle(ShiftRandomIdx,gapdata.n*gapdata.m);
     for (int i=0;i<gapdata.n*gapdata.m;i++){
+      if (consecutive_count >=50){
+        break;
+      }
       AgentIdx = ShiftNeighbor[ShiftRandomIdx[i]][0];
       JobIdx = ShiftNeighbor[ShiftRandomIdx[i]][1];
       vdata.tempsol[AgentIdx] = JobIdx;
@@ -667,6 +651,7 @@ int main(int argc, char *argv[])
       if (Result[0] == 0){
         delta = Result[1]-tempBestCost;
         if (accept_prob(delta,T)==1){
+          consecutive_count += 1;
           vdata.tempBestsol[AgentIdx] = vdata.tempsol[AgentIdx];
           tempBestCost = Result[1];
           if (delta<0){
@@ -676,6 +661,7 @@ int main(int argc, char *argv[])
           }
         }else{
           vdata.tempsol[AgentIdx] = vdata.tempBestsol[AgentIdx];
+          consecutive_count = 0;
         }
       }else{
         vdata.tempsol[AgentIdx] = vdata.tempBestsol[AgentIdx];
@@ -683,9 +669,14 @@ int main(int argc, char *argv[])
       free(Result);  
     }
 
+    consecutive_count = 0;
+
     // swap近傍
     SwapShuffle(SwapRandomIdx,gapdata.n*gapdata.n);
     for (int i=0;i<gapdata.n*gapdata.n;i++){
+      if (consecutive_count >=50){
+        break;
+      }
       FirstAgentIdx = SwapNeighbor[SwapRandomIdx[i]][0];
       FirstJobIdx = vdata.tempsol[FirstAgentIdx];
       SecondAgentIdx = SwapNeighbor[SwapRandomIdx[i]][1];
@@ -697,6 +688,7 @@ int main(int argc, char *argv[])
       if (Result[0] == 0){
         delta = Result[1]-tempBestCost;
         if (accept_prob(delta,T)==1){
+          consecutive_count += 1;
           vdata.tempBestsol[FirstAgentIdx] = vdata.tempsol[FirstAgentIdx];
           vdata.tempBestsol[SecondAgentIdx] = vdata.tempsol[SecondAgentIdx];
           tempBestCost = Result[1];
@@ -706,6 +698,7 @@ int main(int argc, char *argv[])
             }
           }
         }else{
+          consecutive_count = 0;
           vdata.tempsol[FirstAgentIdx] = vdata.tempBestsol[FirstAgentIdx];
           vdata.tempsol[SecondAgentIdx] = vdata.tempBestsol[SecondAgentIdx];
         }
