@@ -635,7 +635,7 @@ int main(int argc, char *argv[])
 
   int delta;
   int consecutive_count;
-  while(T>1.0){
+  while(T>0.001){
     consecutive_count = 0;
     // shift局所探索
     ShiftShuffle(ShiftRandomIdx,gapdata.n*gapdata.m);
